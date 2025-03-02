@@ -3,7 +3,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.my</groupId>
-    <artifactId>KnowledgeGraphChat-backend</artifactId>
+    <artifactId>MultiRoundConversationChat-backend</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>KnowledgeGraphChat-backend</name>
     <description>KnowledgeGraphChat-backend</description>
@@ -105,7 +105,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
                 <configuration>
-                    <mainClass>com.my.knowledgegraphchatbackend.KnowledgeGraphChatBackendApplication</mainClass>
+                    <mainClass>com.my.multiroundconversationchatbackend.MultiRoundConversationChatBackendApplication</mainClass>
                 </configuration>
                 <executions>
                     <execution>

@@ -1,7 +1,7 @@
 # 公共配置文件
 spring:
   application:
-    name: KnowledgeGraphChat-backend
+    name: MultiRoundConversationChat-backend
   # 默认 dev 环境
   profiles:
     active: dev
