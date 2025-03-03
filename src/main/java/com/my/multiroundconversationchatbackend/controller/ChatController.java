@@ -9,7 +9,9 @@ import com.my.multiroundconversationchatbackend.model.entity.Message;
 import com.my.multiroundconversationchatbackend.model.entity.MessageBody;
 
 import com.my.multiroundconversationchatbackend.service.ChatService;
-import com.my.multiroundconversationchatbackend.service.conversation.ConversationService;
+
+import com.my.multiroundconversationchatbackend.service.conversation.SemanticConversationService;
+import com.my.multiroundconversationchatbackend.utils.DialogHistoryThreadLocal;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -31,7 +33,7 @@ public class ChatController {
     private ChatService chatService;
 
     @Autowired
-    private ConversationService conversationService;
+    private SemanticConversationService semanticConversationService;
 
     /**
      * 创建
@@ -106,7 +108,13 @@ public class ChatController {
             throw  new BusinessException(ErrorCode.PARAMS_ERROR);
         }
 
+        //清除内存中的问答记录
+        DialogHistoryThreadLocal.clear();
+
         MessageBody one = chatService.getOneById(getRequest.getId());
+
+        //将数据库查询到的记录放到threadLocal中进行字段映射，只需要存消息内容就好
+        one.getMessages();
         if (one == null){
             throw new BusinessException(ErrorCode.PARAMS_ERROR,"数据不存在");
         }
@@ -114,17 +122,17 @@ public class ChatController {
 
     }
 
-    @PostMapping("/getStreamRes")
-    public void getRes(@RequestBody Message message, HttpServletResponse response) throws IOException {
-        log.info("Input content: {}", message.getContent());
-        conversationService.doStreamChat(message, response);
-    }
+//    @PostMapping("/getStreamRes")
+//    public void getRes(@RequestBody Message message, HttpServletResponse response) throws IOException {
+//        log.info("Input content: {}", message.getContent());
+//        conversationService.doStreamChat(message, response);
+//    }
 
     @PostMapping("/getRes")
     public BaseResponse<String> getRes(@RequestBody Message message) {
         log.info("Input content: {}", message.getContent());
 //        log.info("Model: {}",message.);
-        String response = conversationService.doChat(message);
+        String response = semanticConversationService.doChat(message);
         log.info("Response: {}", response);
         return ResultUtils.success(response);
     }

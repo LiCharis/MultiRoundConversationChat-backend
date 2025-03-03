@@ -7,7 +7,7 @@ import java.io.PrintWriter;
  * @date 2025年03月02日 17:41
  */
 public interface ChatModelService {
-    String generateResponse(String systemPrompt, String context);
+    String generateResponse(String systemPrompt, String buildPrompt);
 
     //流式输出
     void generateStreamResponse(String systemPrompt, String context, PrintWriter writer);

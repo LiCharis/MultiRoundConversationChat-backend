@@ -75,6 +75,13 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!-- HanLP核心库 -->
+        <dependency>
+            <groupId>com.hankcs</groupId>
+            <artifactId>hanlp</artifactId>
+            <version>portable-1.8.2</version>
+        </dependency>
     </dependencies>
     <dependencyManagement>
         <dependencies>

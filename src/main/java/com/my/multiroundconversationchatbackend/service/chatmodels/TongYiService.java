@@ -25,7 +25,7 @@ import com.google.gson.Gson;
 public class TongYiService implements ChatModelService{
 
     @Override
-    public String generateResponse(String systemPrompt, String context) {
+    public String generateResponse(String systemPrompt, String buildPrompt) {
         try {
             // 创建请求体
             RequestBody requestBody = new RequestBody(
@@ -33,7 +33,7 @@ public class TongYiService implements ChatModelService{
                     "qwen-plus",
                     new Message[] {
                             new Message("system", systemPrompt),
-                            new Message("user", context)
+                            new Message("user",buildPrompt)
                     }
             );
 
