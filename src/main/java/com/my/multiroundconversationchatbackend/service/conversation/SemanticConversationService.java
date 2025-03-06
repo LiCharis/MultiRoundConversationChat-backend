@@ -6,13 +6,16 @@ import com.my.multiroundconversationchatbackend.model.entity.DialogueRecord;
 import com.my.multiroundconversationchatbackend.model.entity.Message;
 import com.my.multiroundconversationchatbackend.service.chatmodels.ChatModelManager;
 
-import com.my.multiroundconversationchatbackend.utils.DialogHistoryThreadLocal;
+import com.my.multiroundconversationchatbackend.utils.CounterManager;
+import com.my.multiroundconversationchatbackend.utils.DialogHistoryManager;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import javax.servlet.http.HttpSession;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -39,24 +42,20 @@ public class SemanticConversationService{
     private static final int WINDOW_SIZE = 10;
     private static final double DECAY_FACTOR = 0.1;
 
-
-    //对话轮次计数器
-    private static final AtomicInteger counter = new AtomicInteger(0);
-
-    //历史对话记录
-    private static final List<DialogueRecord> DIALOGUE_RECORDS = DialogHistoryThreadLocal.getHistory();
-
-
-    public String doChat(Message message) {
+    public String doChat(Message message, HttpSession httpSession) {
 
         //获取构建好的prompt
-        String buildPrompt = processDialogue(message);
+        String buildPrompt = processDialogue(message,httpSession);
 
         //调用接口获取响应
         String response = chatModelManager.get("dev").generateResponse("",buildPrompt);
 
         //更新对话历史
-        updateDialogueHistory(message.getContent(),response);
+        updateDialogueHistory(message.getContent(),response,httpSession);
+
+        //重新计算权重
+        calculateCombinedWeights(httpSession);
+        log.info("DialogHistory {}",DialogHistoryManager.getHistory(httpSession).size());
 
         return response;
     }
@@ -64,32 +63,34 @@ public class SemanticConversationService{
     /**
      * 处理多轮对话
      */
-    public String processDialogue(Message message) {
+    public String processDialogue(Message message,HttpSession httpSession) {
         //如果是第一次询问，就直接返回
-        if (DIALOGUE_RECORDS.isEmpty()) {
+        if (DialogHistoryManager.getHistory(httpSession).isEmpty()) {
             return message.getContent();
         }
         // 1. 管理对话窗口
-        manageDialogueWindow();
+        manageDialogueWindow(httpSession);
 
         // 2. 构建优化后的提示词
-        return buildOptimizedPrompt(message.getContent());
+        return buildOptimizedPrompt(message.getContent(),httpSession);
     }
 
 
-    private void manageDialogueWindow() {
+    private void manageDialogueWindow(HttpSession httpSession) {
         // 如果超出窗口大小，移除最早的记录
-        while (DialogHistoryThreadLocal.isFull()) {
-            DIALOGUE_RECORDS.remove(0);
+        while (DialogHistoryManager.isFull(httpSession)) {
+            DialogHistoryManager.getHistory(httpSession).remove(0);
         }
     }
 
-    private static void updateDialogueHistory(String query, String response) {
+    public static void updateDialogueHistory(String query, String response,HttpSession httpSession) {
         String content = query + " " + response;
         // 提取语义特征
         Set<String> keywords = extractKeywords(content);
         Map<String, Double> topics = calculateTopicDistribution(content);
         double frequency = calculateTermFrequency(content);
+
+        AtomicInteger counter = CounterManager.getCounterFromSession(httpSession);
 
         DialogueRecord dialogueRecord = new DialogueRecord(
                 query,
@@ -99,22 +100,25 @@ public class SemanticConversationService{
                 0,
                 new DialogueRecord.SemanticFeature(keywords, frequency, topics)
         );
-        DIALOGUE_RECORDS.add(dialogueRecord);
-        //重新计算权重
-        calculateCombinedWeights(DIALOGUE_RECORDS);
-
+        List<DialogueRecord> dialogueRecordList = DialogHistoryManager.getHistory(httpSession);
+        dialogueRecordList.add(dialogueRecord);
+        // 显式更新 session 中的数据
+        httpSession.setAttribute("DIALOG_HISTORY", dialogueRecordList);
+        httpSession.setAttribute("SESSION_COUNTER",counter);
     }
 
 
     /**
      * 计算综合权重
      */
-    private static void calculateCombinedWeights(List<DialogueRecord> dialogueRecordList) {
+    public static void calculateCombinedWeights(HttpSession httpSession) {
         Map<Integer, Double> weights = new HashMap<>();
+        List<DialogueRecord> dialogueRecordList = DialogHistoryManager.getHistory(httpSession);
+        int size = DialogHistoryManager.size(httpSession);
 
         dialogueRecordList.forEach((dialogueRecord) -> {
-            // 1. 计算时间衰减
-            int currentTurn = DIALOGUE_RECORDS.size() - 1;
+            // 1. 计算时间衰减  取最后一个元素的turnIndex
+            int currentTurn = dialogueRecordList.get(size - 1).getTurnIndex();
 
             // 计算时间衰减权重
             double timeWeight = Math.exp(-DECAY_FACTOR * (currentTurn - dialogueRecord.getTurnIndex()));
@@ -188,11 +192,12 @@ public class SemanticConversationService{
     /**
      * 构建优化后的提示词
      */
-    private String buildOptimizedPrompt(String currentQuery) {
+    private String buildOptimizedPrompt(String currentQuery,HttpSession httpSession) {
+        List<DialogueRecord> dialogueRecordList = DialogHistoryManager.getHistory(httpSession);
         StringBuilder prompt = new StringBuilder();
         // 对话历史摘要
         prompt.append("=== Previous Dialogue Summary ===\n");
-        for (DialogueRecord record : DIALOGUE_RECORDS) {
+        for (DialogueRecord record : dialogueRecordList) {
             double weight = record.getWeight();
             Set<String> keywords = record.getSemanticFeature().getKeywords();
             prompt.append(String.format("Turn %d (Weight: %.2f):\n", record.getTurnIndex(), weight));
@@ -203,7 +208,7 @@ public class SemanticConversationService{
         // 主题分布
         prompt.append("=== Topic Distribution ===\n");
         Map<String, Double> globalTopics = new HashMap<>();
-        for (DialogueRecord record :DIALOGUE_RECORDS) {
+        for (DialogueRecord record : dialogueRecordList) {
             record.getSemanticFeature().getTopics().forEach((topic, weight) ->
                     globalTopics.merge(topic, weight*record.getWeight(), Double::sum)
             );

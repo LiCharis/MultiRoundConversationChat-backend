@@ -14,7 +14,7 @@ import java.util.Set;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class DialogueRecord {
+public class DialogueRecord extends BaseModel{
     private String query;
     private String response;
     private long timestamp;
@@ -28,7 +28,7 @@ public class DialogueRecord {
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
-    public static class SemanticFeature {
+    public static class SemanticFeature extends BaseModel{
         private Set<String> keywords;        // 关键词集合
         private double frequency;            // 出现频率
         private Map<String, Double> topics;  // 主题分布

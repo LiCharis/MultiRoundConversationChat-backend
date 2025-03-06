@@ -9,7 +9,7 @@ import java.util.Date;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Message {
+public class Message extends BaseModel{
 
     private String id;
 
@@ -43,7 +43,7 @@ public class Message {
 
 
 
-    static class Meta {
+    static class Meta extends BaseModel{
         private String avatar;
         private String title;
 
@@ -64,7 +64,7 @@ public class Message {
         }
     }
 
-    static class Extra {
+    static class Extra extends BaseModel {
         private String fromModel;
 
         public String getFromModel() {
