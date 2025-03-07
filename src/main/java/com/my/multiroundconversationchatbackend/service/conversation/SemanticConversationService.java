@@ -78,6 +78,7 @@ public class SemanticConversationService{
 
     private void manageDialogueWindow(HttpSession httpSession) {
         // 如果超出窗口大小，移除最早的记录
+        //因此最多可以根据最后 MAX_HISTORY_SIZE-1个回合的对话来回答
         while (DialogHistoryManager.isFull(httpSession)) {
             DialogHistoryManager.getHistory(httpSession).remove(0);
         }

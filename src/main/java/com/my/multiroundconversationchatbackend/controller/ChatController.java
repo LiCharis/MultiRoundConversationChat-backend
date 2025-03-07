@@ -39,11 +39,10 @@ public class ChatController {
      * 创建
      *
      * @param
-     * @param request
      * @return
      */
     @PostMapping("/add")
-    public BaseResponse<Boolean> addChat(@RequestBody MessageBody messageBody, HttpServletRequest request) {
+    public BaseResponse<Boolean> addChat(@RequestBody MessageBody messageBody) {
 
 
         if (messageBody == null) {
@@ -66,20 +65,19 @@ public class ChatController {
      * 删除
      *
      * @param deleteRequest
-     * @param request
      * @return
      */
     @PostMapping("/delete")
-    public BaseResponse<Boolean> deleteChat(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
+    public BaseResponse<Boolean> deleteChat(@RequestBody DeleteRequest deleteRequest, HttpSession httpSession) {
         if (deleteRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        Boolean result = chatService.logicDeleteById(deleteRequest.getId());
+        Boolean result = chatService.logicDeleteById(deleteRequest.getId(),httpSession);
         return ResultUtils.success(result);
     }
 
     @PostMapping("/update")
-    public BaseResponse<Boolean> updateChat(@RequestBody ChatUpdateRequest chatUpdateRequest, HttpServletRequest request) {
+    public BaseResponse<Boolean> updateChat(@RequestBody ChatUpdateRequest chatUpdateRequest) {
         if (chatUpdateRequest == null || chatUpdateRequest.getId() == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -110,11 +108,6 @@ public class ChatController {
         if (getRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-
-        //清除问答记录
-        DialogHistoryManager.clear(httpSession);
-        //清除计数器
-        CounterManager.clear(httpSession);
         MessageBody one = chatService.getOneById(getRequest.getId(), httpSession);
 
         if (one == null) {
@@ -122,6 +115,12 @@ public class ChatController {
         }
         return ResultUtils.success(one);
 
+    }
+
+    @PostMapping("/clearHistory")
+    public BaseResponse<Boolean> clearChat(HttpSession httpSession) {
+        chatService.clearDialogHistory(httpSession);
+        return ResultUtils.success(true);
     }
 
 //    @PostMapping("/getStreamRes")

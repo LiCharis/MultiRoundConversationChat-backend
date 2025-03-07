@@ -22,44 +22,19 @@ spring:
       uri:
         mongodb://localhost:27017/test
 
-    # Redis 配置
-    # todo 需替换配置，然后取消注释
-    redis:
-      database: 1
-      host: localhost
-      port: 6379
-      timeout: 5000
-      lettuce:
-        pool:
-          max-active: 8
-          max-wait: 10000ms
-          max-idle: 200
-          min-idle: 5
-
+  # Redis 配置
+  # todo 需替换配置，然后取消注释
   redis:
-    redisson:
-      config: |
-        singleServerConfig:
-          idleConnectionTimeout: 10000
-          connectTimeout: 10000
-          timeout: 3000
-          retryAttempts: 3
-          retryInterval: 1500
-          password: 
-          subscriptionsPerConnection: 5
-          clientName: null
-          address: "redis://localhost:6379"
-          subscriptionConnectionMinimumIdleSize: 1
-          subscriptionConnectionPoolSize: 50
-          connectionMinimumIdleSize: 24
-          connectionPoolSize: 64
-          database: 1
-          dnsMonitoringInterval: 5000
-        threads: 16
-        nettyThreads: 32
-        codec: !<org.redisson.codec.JsonJacksonCodec> {}
-        transportMode: "NIO"
-  
+    database: 1
+    host: localhost
+    port: 6379
+    timeout: 5000
+    lettuce:
+      pool:
+        max-active: 8
+        max-wait: 10000ms
+        max-idle: 200
+        min-idle: 5
 
   # Elasticsearch 配置
   # todo 需替换配置，然后取消注释

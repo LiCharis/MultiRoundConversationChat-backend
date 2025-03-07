@@ -22,7 +22,7 @@ public class ChatModelManager {
     public ChatModelService get(String modelName) {
 
         if ("dev".equals(profile)) {
-            return chatModelServiceMap.get("mockChatService");
+            return chatModelServiceMap.get("tongYiService");
         }
         //组装出beanName，并从map中获取对应的bean
         ChatModelService chatModelService = chatModelServiceMap.get(modelName);
