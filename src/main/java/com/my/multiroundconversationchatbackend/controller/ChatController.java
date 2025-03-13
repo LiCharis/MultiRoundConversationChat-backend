@@ -3,6 +3,7 @@ package com.my.multiroundconversationchatbackend.controller;
 import com.my.multiroundconversationchatbackend.common.*;
 import com.my.multiroundconversationchatbackend.exception.BusinessException;
 import com.my.multiroundconversationchatbackend.exception.ThrowUtils;
+import com.my.multiroundconversationchatbackend.model.dto.ChatRequest;
 import com.my.multiroundconversationchatbackend.model.dto.ChatUpdateRequest;
 import com.my.multiroundconversationchatbackend.model.entity.Message;
 import com.my.multiroundconversationchatbackend.model.entity.MessageBody;
@@ -72,7 +73,7 @@ public class ChatController {
         if (deleteRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        Boolean result = chatService.logicDeleteById(deleteRequest.getId(),httpSession);
+        Boolean result = chatService.logicDeleteById(deleteRequest.getId(), httpSession);
         return ResultUtils.success(result);
     }
 
@@ -130,28 +131,21 @@ public class ChatController {
 //    }
 
     @PostMapping("/getRes")
-    public BaseResponse<String> getRes(@RequestBody Message message, HttpSession httpSession, HttpServletRequest request) {
-        log.info("Input content: {}", message.getContent());
-
-        // 判断会话状态
-        boolean isNewSession = httpSession.isNew();
-        String sessionId = httpSession.getId();
-        Cookie[] cookies = request.getCookies();
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if ("SESSION".equals(cookie.getName())) {
-                    // 比较 cookie 中的会话 ID 和当前会话 ID
-                    boolean isSameSession = sessionId.equals(cookie.getValue());
-                    log.info("Cookie session matches current session: {}", isSameSession);
-                    break;
-                }
-            }
+    public BaseResponse<String> getRes(@RequestBody ChatRequest chatRequest, HttpSession httpSession) {
+        if (chatRequest == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-
-        log.info("cookie: {}", httpSession.getAttribute("Cookie"));
-
-//        log.info("Model: {}",message.);
-        String res = semanticConversationService.doChat(message, httpSession);
+        String model = chatRequest.getModel();
+        String content = chatRequest.getMessages().getContent();
+        if (StringUtils.isEmpty(model)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        if (StringUtils.isEmpty(content)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        log.info("choose model: {}", model);
+        log.info("input content: {}", content);
+        String res = semanticConversationService.doChat(chatRequest.getMessages(), model, httpSession);
         log.info("Res: {}", res);
 
         return ResultUtils.success(res);

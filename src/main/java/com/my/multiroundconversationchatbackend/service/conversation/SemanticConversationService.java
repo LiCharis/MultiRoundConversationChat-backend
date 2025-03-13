@@ -4,8 +4,8 @@ import com.hankcs.hanlp.HanLP;
 import com.hankcs.hanlp.seg.common.Term;
 import com.my.multiroundconversationchatbackend.model.entity.DialogueRecord;
 import com.my.multiroundconversationchatbackend.model.entity.Message;
+import com.my.multiroundconversationchatbackend.service.chatmodels.BaseChatModelService;
 import com.my.multiroundconversationchatbackend.service.chatmodels.ChatModelManager;
-
 import com.my.multiroundconversationchatbackend.utils.CounterManager;
 import com.my.multiroundconversationchatbackend.utils.DialogHistoryManager;
 import lombok.AllArgsConstructor;
@@ -14,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import javax.servlet.http.HttpSession;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -38,17 +37,15 @@ public class SemanticConversationService{
     private static final double SEMANTIC_WEIGHT = 0.4;  // 语义相关度权重
     private static final int MAX_KEYWORDS = 10;         // 每轮对话最大关键词数量
 
-    // 对话窗口大小
-    private static final int WINDOW_SIZE = 10;
     private static final double DECAY_FACTOR = 0.1;
 
-    public String doChat(Message message, HttpSession httpSession) {
+    public String doChat(Message message,String modelName, HttpSession httpSession) {
 
         //获取构建好的prompt
         String buildPrompt = processDialogue(message,httpSession);
-
         //调用接口获取响应
-        String response = chatModelManager.get("dev").generateResponse("",buildPrompt);
+        BaseChatModelService chatModelService = chatModelManager.get(modelName);
+        String response = chatModelService.doGenerate(buildPrompt,"");
 
         //更新对话历史
         updateDialogueHistory(message.getContent(),response,httpSession);

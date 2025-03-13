@@ -1,5 +1,7 @@
 package com.my.multiroundconversationchatbackend.service.chatmodels;
 
+import com.my.multiroundconversationchatbackend.model.dto.GenerateCharRequest;
+
 import java.io.PrintWriter;
 
 /**
@@ -7,8 +9,8 @@ import java.io.PrintWriter;
  * @date 2025年03月02日 17:41
  */
 public interface ChatModelService {
-    String generateResponse(String systemPrompt, String buildPrompt);
+    String generateResponse(GenerateCharRequest generateCharRequest);
 
     //流式输出
-    void generateStreamResponse(String systemPrompt, String context, PrintWriter writer);
+    void generateStreamResponse(GenerateCharRequest generateCharRequest);
 }

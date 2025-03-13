@@ -1,7 +1,6 @@
 package com.my.multiroundconversationchatbackend.service.chatmodels;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -13,25 +12,26 @@ import java.util.Map;
 @Component
 public class ChatModelManager {
     @Autowired
-    private Map<String,ChatModelService> chatModelServiceMap;
+    private Map<String,BaseChatModelService> chatModelServiceMap;
 
-
-    @Value("${spring.profiles.active}")
-    private String profile;
-
-    public ChatModelService get(String modelName) {
-
-        if ("dev".equals(profile)) {
-            return chatModelServiceMap.get("tongYiService");
-        }
-        //组装出beanName，并从map中获取对应的bean
-        ChatModelService chatModelService = chatModelServiceMap.get(modelName);
-
+    public BaseChatModelService get(String modelName) {
+        String beanName = splitNameToGetBean(modelName);
+        BaseChatModelService chatModelService = chatModelServiceMap.get(beanName);
         if (chatModelService != null) {
             return chatModelService;
         } else {
             throw new UnsupportedOperationException(
                     "No ChatModelService Found With modelName : " + modelName);
         }
+    }
+
+    private String splitNameToGetBean(String modelName) {;
+        String beanPrefix = "";
+        if (modelName.contains("-")) {
+           beanPrefix = modelName.split("-")[0];
+        }else {
+            beanPrefix = modelName;
+        }
+        return beanPrefix + "ChatService";
     }
 }
