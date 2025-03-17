@@ -29,7 +29,17 @@ public class BaseResponse<T> implements Serializable {
         this(code, data, "");
     }
 
+
     public BaseResponse(ErrorCode errorCode) {
         this(errorCode.getCode(), null, errorCode.getMessage());
     }
+
+    public static <T> BaseResponse<T> success(T data) {
+        return new BaseResponse<>(200, data, "success");
+    }
+
+    public static <T> BaseResponse<T> error(int code, String message) {
+        return new BaseResponse<>(code, null, message);
+    }
+
 }

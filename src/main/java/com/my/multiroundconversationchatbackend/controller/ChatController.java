@@ -5,14 +5,13 @@ import com.my.multiroundconversationchatbackend.exception.BusinessException;
 import com.my.multiroundconversationchatbackend.exception.ThrowUtils;
 import com.my.multiroundconversationchatbackend.model.dto.ChatRequest;
 import com.my.multiroundconversationchatbackend.model.dto.ChatUpdateRequest;
-import com.my.multiroundconversationchatbackend.model.entity.Message;
 import com.my.multiroundconversationchatbackend.model.entity.MessageBody;
 
-import com.my.multiroundconversationchatbackend.service.ChatService;
-import com.my.multiroundconversationchatbackend.service.conversation.SemanticConversationService;
+import com.my.multiroundconversationchatbackend.service.chat.ChatService;
+import com.my.multiroundconversationchatbackend.service.chat.conversation.SemanticConversationService;
 
-import com.my.multiroundconversationchatbackend.utils.CounterManager;
-import com.my.multiroundconversationchatbackend.utils.DialogHistoryManager;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -20,12 +19,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.List;
 
 @Slf4j
+@Api(tags = "对话模块")
 @RestController
 @RequestMapping("/chat")
 public class ChatController {
@@ -42,6 +40,7 @@ public class ChatController {
      * @param
      * @return
      */
+    @ApiOperation(value = "保存对话信息")
     @PostMapping("/add")
     public BaseResponse<Boolean> addChat(@RequestBody MessageBody messageBody) {
 
@@ -68,6 +67,7 @@ public class ChatController {
      * @param deleteRequest
      * @return
      */
+    @ApiOperation(value = "删除对话信息")
     @PostMapping("/delete")
     public BaseResponse<Boolean> deleteChat(@RequestBody DeleteRequest deleteRequest, HttpSession httpSession) {
         if (deleteRequest == null) {
@@ -77,6 +77,7 @@ public class ChatController {
         return ResultUtils.success(result);
     }
 
+    @ApiOperation(value = "更新对话信息")
     @PostMapping("/update")
     public BaseResponse<Boolean> updateChat(@RequestBody ChatUpdateRequest chatUpdateRequest) {
         if (chatUpdateRequest == null || chatUpdateRequest.getId() == null) {
@@ -93,6 +94,7 @@ public class ChatController {
     }
 
 
+    @ApiOperation(value = "获取全部对话记录")
     @PostMapping("/getHistoryList")
     public BaseResponse<List<MessageBody>> getChatByUserId(@RequestBody GetRequest getRequest) {
         if (getRequest == null) {
@@ -104,6 +106,7 @@ public class ChatController {
         return ResultUtils.success(messageBodyList);
     }
 
+    @ApiOperation(value = "获取单条对话记录")
     @PostMapping("/getOne")
     public BaseResponse<MessageBody> getChatById(@RequestBody GetRequest getRequest, HttpSession httpSession) {
         if (getRequest == null) {
@@ -118,6 +121,7 @@ public class ChatController {
 
     }
 
+    @ApiOperation(value = "清除本次对话上下文")
     @PostMapping("/clearHistory")
     public BaseResponse<Boolean> clearChat(HttpSession httpSession) {
         chatService.clearDialogHistory(httpSession);
@@ -130,6 +134,7 @@ public class ChatController {
 //        conversationService.doStreamChat(message, response);
 //    }
 
+    @ApiOperation(value = "获取对话响应")
     @PostMapping("/getRes")
     public BaseResponse<String> getRes(@RequestBody ChatRequest chatRequest, HttpSession httpSession) {
         if (chatRequest == null) {

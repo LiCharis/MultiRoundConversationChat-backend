@@ -9,7 +9,7 @@ import java.util.Date;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Message extends BaseModel{
+public class Message extends BaseModel {
 
     private String id;
 
