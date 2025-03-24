@@ -2,13 +2,16 @@ package com.my.multiroundconversationchatbackend.service.chat;
 
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
+import com.my.multiroundconversationchatbackend.model.entity.DialogueContext;
 import com.my.multiroundconversationchatbackend.model.entity.Message;
 import com.my.multiroundconversationchatbackend.model.entity.MessageBody;
 import com.my.multiroundconversationchatbackend.repository.ChatRepository;
-import com.my.multiroundconversationchatbackend.service.chat.conversation.SemanticConversationService;
+import com.my.multiroundconversationchatbackend.service.chat.conversation.DialogManager;
+import com.my.multiroundconversationchatbackend.service.chat.conversation.SemanticProcessor;
 import com.my.multiroundconversationchatbackend.utils.CounterManager;
 import com.my.multiroundconversationchatbackend.utils.DialogHistoryManager;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -34,6 +37,12 @@ public class ChatService {
 
     @Resource
     private ChatRepository chatRepository;
+
+    @Autowired
+    private DialogManager dialogManager;
+
+    @Autowired
+    private SemanticProcessor semanticProcessor;
 
     /**
      * 通过id查询聊天信息
@@ -139,7 +148,6 @@ public class ChatService {
         List<Message> messageList = messageBody.getMessages();
         int size = messageList.size();
 
-
         int recentMessageCount = 2 * DialogHistoryManager.MAX_HISTORY_SIZE;
         // 检查确保 messageList 至少有 6 个元素
 
@@ -153,18 +161,29 @@ public class ChatService {
 
         //取后2*MAX_DIALOG_SIZE,然后映射其内容到DialogRecord的query和response字段
         //将recentMessage中俩俩拆开分为各组，一组中的前一个content值赋值到dialogrecord的query字段，后一个赋值到response字段
+        String lastQuery = null;
         for (int i = 0; i < recentMessages.size(); i += 2) {
             if (i + 1 < recentMessages.size()) { // 确保还有一个元素
                 // 将前一个 content 赋值给 query，后一个赋值给 response
                 String query = recentMessages.get(i).getContent();
                 String response = recentMessages.get(i + 1).getContent();
 
-                SemanticConversationService.updateDialogueHistory(query, response, httpSession);
+                DialogueContext dialogueContext = new DialogueContext();
+                dialogueContext.setQuery(query);
+                dialogueContext.setResponse(response);
+                dialogueContext.setSession(httpSession);
+                semanticProcessor.calculateFeature(dialogueContext);
+                dialogManager.updateHistory(dialogueContext);
+            }
+            if (i + 1 == recentMessages.size() - 1) {
+                lastQuery = recentMessages.get(i).getContent();
             }
         }
         //添加历史上记录数据
         //计算必要的数据
-        SemanticConversationService.calculateCombinedWeights(httpSession);
+        //这里的初始query应该是lastQuery
+
+        semanticProcessor.calculateCombinedWeights(lastQuery,httpSession);
     }
 
 

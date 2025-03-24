@@ -1,119 +1,92 @@
-//package com.my.multiroundconversationchatbackend.service.chat.conversation;
-//
-//import com.my.multiroundconversationchatbackend.constamt.chat.PromptConstant;
-//import com.my.multiroundconversationchatbackend.model.entity.DialogueRecord;
-//import com.my.multiroundconversationchatbackend.model.entity.Message;
-//import com.my.multiroundconversationchatbackend.service.chat.chatmodels.ChatModelManager;
-//import com.my.multiroundconversationchatbackend.service.chat.prompt.PromptBuilderService;
-//import com.my.multiroundconversationchatbackend.utils.DialogHistoryThreadLocal;
-//import lombok.extern.slf4j.Slf4j;
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.stereotype.Service;
-//
-//import javax.servlet.http.HttpServletResponse;
-//import java.io.IOException;
-//import java.io.PrintWriter;
-//import java.util.ArrayList;
-//import java.util.HashMap;
-//import java.util.List;
-//import java.util.Map;
-//
-///**
-// * @author lihaixu
-// * @date 2025年03月02日 16:25
-// */
-//@Slf4j
-//@Service
-//public class ConversationService {
-//
-//    @Autowired
-//    private PromptBuilderService promptBuilder;
-//
-//    @Autowired
-//    private ChatModelManager chatModelManager;
-//
-//    // 对话窗口大小
-//    private static final int WINDOW_SIZE = 10;
-//    // 时间衰减系数
-//    private static final double DECAY_FACTOR = 0.1;
-//    //历史对话记录
-//    private static final List<DialogueRecord> DIALOGUE_RECORDS = DialogHistoryThreadLocal.getHistory();
-//
-//
-//    //todo 对于1、2、 3、5可以使用模版方法
-//    public String doChat(Message message) {
-////
-////        // 1. 对话窗口管理
-////        manageDialogueWindow(message);
-////
-////        // 2. 计算注意力权重
-////        Map<Integer, Double> attentionWeights = calculateAttentionWeights();
-////
-//////
-//////        String context = buildContext(attentionWeights);
-////        log.info("dialogueHistory: {}",DialogHistoryThreadLocal.getHistory());
-////        log.info("Attention weights: {}", attentionWeights);
-////        log.info("message: {}", message);
-////
-////        // 3.构建提示词
-////        String prompt = promptBuilder.buildPrompt(
-////                DIALOGUE_RECORDS,
-////                attentionWeights,
-////                message.getContent()
-////        );
-////
-////        // 4.调用语言模型
-////        String response = chatModelManager.get("dev").generateResponse(PromptConstant.SYSTEM_PROMPT,prompt);
-////
-////        // 5. 更新对话历史
-////        updateDialogueHistory(response);
-//
-//        return response;
-//    }
-//
-//
-//    public void doStreamChat(Message message, HttpServletResponse response) throws IOException {
-//        response.setContentType("text/event-stream");
-//        response.setCharacterEncoding("UTF-8");
-//        response.setHeader("Cache-Control", "no-cache");
-//        response.setHeader("Connection", "keep-alive");
-//
-//        PrintWriter writer = response.getWriter();
-//
-//        try {
-//            // 1. 对话窗口管理
-//            manageDialogueWindow(message);
-//
-//            // 2. 计算注意力权重
-//            Map<Integer, Double> attentionWeights = calculateAttentionWeights();
-//
-////
-////        String context = buildContext(attentionWeights);
-//            log.info("dialogueHistory: {}", DIALOGUE_RECORDS);
-//            log.info("Attention weights: {}", attentionWeights);
-//            log.info("message: {}", message);
-//
-//            // 3.构建提示词
-//            String prompt = promptBuilder.buildPrompt(
-//                    DIALOGUE_RECORDS,
-//                    attentionWeights,
-//                    message.getContent()
-//            );
-//
-//            chatModelManager.get("dev").generateStreamResponse(
-//                    PromptConstant.SYSTEM_PROMPT,
-//                    prompt,
-//                    writer
-//            );
-//
-//            //todo 如何在流式输出结束后更新对话历史？
-////            // 5. 更新对话历史
-////            updateDialogueHistory(response);
-//        } catch (Exception e) {
-//            log.error("Stream chat error", e);
-//            writer.write("data: Error: " + e.getMessage() + "\n\n");
-//            writer.flush();
-//        }
-//    }
-//
-//}
+package com.my.multiroundconversationchatbackend.service.chat.conversation;
+
+import com.my.multiroundconversationchatbackend.common.ErrorCode;
+import com.my.multiroundconversationchatbackend.model.entity.DialogueContext;
+import com.my.multiroundconversationchatbackend.model.entity.Message;
+import com.my.multiroundconversationchatbackend.service.chat.chatmodels.BaseChatModelService;
+import com.my.multiroundconversationchatbackend.service.chat.chatmodels.ChatModelManager;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.task.TaskExecutor;
+import org.springframework.stereotype.Service;
+
+import javax.servlet.http.HttpSession;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * @author lihaixu
+ * @date 2025年03月22日 21:30
+ */
+@Service
+@Slf4j
+public class ConversationService {
+
+    @Autowired
+    private List<DialogueProcessor> dialogueProcessors;
+
+    @Autowired
+    private DialogManager dialogueManager;
+
+    @Autowired
+    private ChatModelManager chatModelManager;
+
+    @Autowired
+    private TaskExecutor myTaskExecutor;
+
+    /**
+     * 处理聊天请求
+     */
+    public String doChat(Message message, String modelName, HttpSession session) {
+        log.info("Processing chat request with model: {}", modelName);
+
+        // 创建对话上下文
+        DialogueContext context = DialogueContext.builder()
+                .query(message.getContent())
+                .session(session)
+                .modelName(modelName)
+                .build();
+
+        // 按顺序应用所有处理器
+        for (DialogueProcessor processor : dialogueProcessors) {
+            try {
+                context = processor.process(context);
+            } catch (Exception e) {
+                log.error("Error in processor {}: {}", processor.getClass().getSimpleName(), e.getMessage(), e);
+            }
+        }
+
+        // 模型API调用可以异步
+        DialogueContext finalContext = context;
+        CompletableFuture<String> responseFuture = CompletableFuture.supplyAsync(() -> {
+            // 获取优化后的提示词
+            String optimizedPrompt = finalContext.getAttribute("optimizedPrompt");
+            // 调用模型生成回答
+            BaseChatModelService modelService = chatModelManager.get(modelName);
+            try {
+                return modelService.doGenerate(optimizedPrompt, "");
+            } catch (Exception e) {
+                log.error("Error calling model API: {}", e.getMessage(), e);
+                return ErrorCode.API_CALL_ERROR.getMessage();
+            }
+        }, myTaskExecutor);
+
+        // 获取响应并完成流程
+        String response;
+        try {
+            response = responseFuture.get(10, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            log.error("Model API timeout or error", e);
+            response = ErrorCode.API_CALL_ERROR.getMessage();
+        }
+
+        // 设置响应并更新历史
+        context.setResponse(response);
+        dialogueManager.updateHistory(context);
+
+         return response;
+    }
+
+
+}

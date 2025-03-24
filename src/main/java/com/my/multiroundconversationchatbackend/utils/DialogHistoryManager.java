@@ -15,7 +15,7 @@ import java.util.List;
 @Slf4j
 public class DialogHistoryManager {
     // 默认对话历史记录上限
-    public static final int MAX_HISTORY_SIZE = 5;
+    public static final int MAX_HISTORY_SIZE = 10;
     private static final String HISTORY_KEY = "DIALOG_HISTORY";
 
     /**

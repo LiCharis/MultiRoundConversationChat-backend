@@ -5,21 +5,24 @@ import com.my.multiroundconversationchatbackend.exception.BusinessException;
 import com.my.multiroundconversationchatbackend.exception.ThrowUtils;
 import com.my.multiroundconversationchatbackend.model.dto.ChatRequest;
 import com.my.multiroundconversationchatbackend.model.dto.ChatUpdateRequest;
+import com.my.multiroundconversationchatbackend.model.entity.AddMessageBodyRequest;
 import com.my.multiroundconversationchatbackend.model.entity.MessageBody;
 
 import com.my.multiroundconversationchatbackend.service.chat.ChatService;
-import com.my.multiroundconversationchatbackend.service.chat.conversation.SemanticConversationService;
+import com.my.multiroundconversationchatbackend.service.chat.conversation.ConversationService;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
+import javax.validation.Valid;
 import java.util.List;
 
 @Slf4j
@@ -32,7 +35,7 @@ public class ChatController {
     private ChatService chatService;
 
     @Autowired
-    private SemanticConversationService semanticConversationService;
+    private ConversationService conversationService;
 
     /**
      * 创建
@@ -42,19 +45,19 @@ public class ChatController {
      */
     @ApiOperation(value = "保存对话信息")
     @PostMapping("/add")
-    public BaseResponse<Boolean> addChat(@RequestBody MessageBody messageBody) {
+    public BaseResponse<Boolean> addChat(@Valid @RequestBody AddMessageBodyRequest addMessageBodyRequest) {
 
-
-        if (messageBody == null) {
+        if (addMessageBodyRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        ThrowUtils.throwIf(ObjectUtils.isEmpty(messageBody.getId()) && ObjectUtils.isEmpty(messageBody.getUserId()), ErrorCode.OPERATION_ERROR);
 
-        if (messageBody.getMessages().size() <= 0) {
+        if (addMessageBodyRequest.getMessages().size() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR, "您还没有开始对话哦");
         }
-
+        MessageBody messageBody = new MessageBody();
+        BeanUtils.copyProperties(addMessageBodyRequest, messageBody);
         MessageBody save = chatService.save(messageBody);
+
         if (save == null) {
             throw new BusinessException(ErrorCode.OPERATION_ERROR);
         }
@@ -69,7 +72,7 @@ public class ChatController {
      */
     @ApiOperation(value = "删除对话信息")
     @PostMapping("/delete")
-    public BaseResponse<Boolean> deleteChat(@RequestBody DeleteRequest deleteRequest, HttpSession httpSession) {
+    public BaseResponse<Boolean> deleteChat(@Valid @RequestBody DeleteRequest deleteRequest, HttpSession httpSession) {
         if (deleteRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -96,7 +99,7 @@ public class ChatController {
 
     @ApiOperation(value = "获取全部对话记录")
     @PostMapping("/getHistoryList")
-    public BaseResponse<List<MessageBody>> getChatByUserId(@RequestBody GetRequest getRequest) {
+    public BaseResponse<List<MessageBody>> getChatByUserId(@Valid @RequestBody GetRequest getRequest) {
         if (getRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -108,7 +111,7 @@ public class ChatController {
 
     @ApiOperation(value = "获取单条对话记录")
     @PostMapping("/getOne")
-    public BaseResponse<MessageBody> getChatById(@RequestBody GetRequest getRequest, HttpSession httpSession) {
+    public BaseResponse<MessageBody> getChatById(@Valid @RequestBody GetRequest getRequest, HttpSession httpSession) {
         if (getRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -136,7 +139,7 @@ public class ChatController {
 
     @ApiOperation(value = "获取对话响应")
     @PostMapping("/getRes")
-    public BaseResponse<String> getRes(@RequestBody ChatRequest chatRequest, HttpSession httpSession) {
+    public BaseResponse<String> getRes(@Valid @RequestBody ChatRequest chatRequest, HttpSession httpSession) {
         if (chatRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -150,7 +153,7 @@ public class ChatController {
         }
         log.info("choose model: {}", model);
         log.info("input content: {}", content);
-        String res = semanticConversationService.doChat(chatRequest.getMessages(), model, httpSession);
+        String res = conversationService.doChat(chatRequest.getMessages(), model, httpSession);
         log.info("Res: {}", res);
 
         return ResultUtils.success(res);
