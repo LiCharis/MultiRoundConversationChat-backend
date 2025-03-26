@@ -75,15 +75,24 @@ public class SemanticProcessor implements DialogueProcessor {
         CompletableFuture<float[]> embeddingFuture = CompletableFuture.supplyAsync(
                 () -> embeddingService.getEmbedding(currentQuery), myTaskExecutor);
 
+        CompletableFuture<Double> frequencyFuture = CompletableFuture.supplyAsync(
+                ()->SemanticUtils.calculateTermFrequency(currentQuery), myTaskExecutor);
+
+        CompletableFuture<Double> coherenceScoreFuture = CompletableFuture.supplyAsync(
+                () -> SemanticUtils.calculateCoherence(SemanticUtils.calculateTopicDistribution(currentQuery)),myTaskExecutor);
+
+        CompletableFuture.allOf(keywordsFuture, topicsFuture, embeddingFuture, frequencyFuture, coherenceScoreFuture);
+
         // 生成语义特征
         // 等待所有特征计算完成并组合结果
         SemanticFeature feature = null;
         try {
             feature = SemanticFeature.builder()
-                    .keywords(keywordsFuture.get(1, TimeUnit.SECONDS))
-                    .topics(topicsFuture.get(1, TimeUnit.SECONDS))
-                    .embedding(embeddingFuture.get(2, TimeUnit.SECONDS))
-                    .frequency(SemanticUtils.calculateTermFrequency(currentQuery))
+                    .keywords(keywordsFuture.get())
+                    .topics(topicsFuture.get())
+                    .embedding(embeddingFuture.get())
+                    .frequency(frequencyFuture.get())
+                    .coherenceScore(coherenceScoreFuture.get())
                     .build();
         } catch (Exception e) {
             log.error("Error in parallel semantic processing", e);

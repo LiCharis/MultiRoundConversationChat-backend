@@ -11,6 +11,10 @@ import java.util.List;
  */
 @Data
 public class AddMessageBodyRequest {
+
+    @NotNull(message = "添加id为null")
+    private String id;
+
     @NotNull(message = "添加userId为null")
     private Long userId;
 

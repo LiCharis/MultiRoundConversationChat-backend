@@ -65,6 +65,7 @@ public class ConversationService {
             // 调用模型生成回答
             BaseChatModelService modelService = chatModelManager.get(modelName);
             try {
+                log.info("optimizedPrompt: {}",optimizedPrompt);
                 return modelService.doGenerate(optimizedPrompt, "");
             } catch (Exception e) {
                 log.error("Error calling model API: {}", e.getMessage(), e);
@@ -75,7 +76,7 @@ public class ConversationService {
         // 获取响应并完成流程
         String response;
         try {
-            response = responseFuture.get(10, TimeUnit.SECONDS);
+            response = responseFuture.get(20, TimeUnit.SECONDS);
         } catch (Exception e) {
             log.error("Model API timeout or error", e);
             response = ErrorCode.API_CALL_ERROR.getMessage();

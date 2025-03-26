@@ -187,6 +187,10 @@ public class ChatService {
     }
 
 
+
+
+
+
     public void clearDialogHistory(HttpSession httpSession) {
         //清除问答记录
         DialogHistoryManager.clear(httpSession);
