@@ -3,6 +3,8 @@ package com.my.multiroundconversationchatbackend.service.chat.conversation;
 import com.my.multiroundconversationchatbackend.model.entity.DialogueContext;
 import com.my.multiroundconversationchatbackend.model.entity.DialogueRecord;
 import com.my.multiroundconversationchatbackend.model.entity.SemanticFeature;
+import com.my.multiroundconversationchatbackend.model.entity.chatReference.ChatReference;
+import com.my.multiroundconversationchatbackend.service.chatReference.service.ChatReferenceService;
 import com.my.multiroundconversationchatbackend.utils.DialogHistoryManager;
 import com.my.multiroundconversationchatbackend.utils.SemanticUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -37,10 +39,10 @@ public class SemanticProcessor implements DialogueProcessor {
     @Autowired
     private TaskExecutor myTaskExecutor;
 
+    @Autowired
+    private ChatReferenceService chatReferenceService;
+
     // 权重配置
-    private static final double TIME_WEIGHT = 0.3;
-    private static final double FREQUENCY_WEIGHT = 0.3;
-    private static final double SEMANTIC_WEIGHT = 0.4;
     private static final double DECAY_FACTOR = 0.1;
 
     @Override
@@ -108,6 +110,7 @@ public class SemanticProcessor implements DialogueProcessor {
      */
     @Async("myTaskExecutor")
     public void calculateCombinedWeights(String currentQuery, HttpSession session) {
+        ChatReference chatReference = chatReferenceService.findChatReferenceByUserId(1L);
         Map<Integer, Double> weights = new HashMap<>();
         List<DialogueRecord> history = DialogHistoryManager.getHistory(session);
         int size = history.size();
@@ -137,9 +140,9 @@ public class SemanticProcessor implements DialogueProcessor {
 
             // 4. 计算综合权重
             double combinedWeight =
-                    TIME_WEIGHT * timeWeight +
-                            FREQUENCY_WEIGHT * freqWeight +
-                            SEMANTIC_WEIGHT * semanticSimilarity;
+                    chatReference.getTimeWeight() * timeWeight +
+                            chatReference.getFrequencyWeight() * freqWeight +
+                            chatReference.getSemanticWeight() * semanticSimilarity;
 
             weights.put(record.getTurnIndex(), combinedWeight);
         });

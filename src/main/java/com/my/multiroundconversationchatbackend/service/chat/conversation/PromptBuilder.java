@@ -2,6 +2,8 @@ package com.my.multiroundconversationchatbackend.service.chat.conversation;
 
 import com.my.multiroundconversationchatbackend.model.entity.DialogueContext;
 import com.my.multiroundconversationchatbackend.model.entity.DialogueRecord;
+import com.my.multiroundconversationchatbackend.model.entity.chatReference.ChatReference;
+import com.my.multiroundconversationchatbackend.service.chatReference.service.ChatReferenceService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
@@ -22,6 +24,9 @@ public class PromptBuilder implements DialogueProcessor {
 
     @Autowired
     private EmbeddingService embeddingService;
+
+    @Autowired
+    private ChatReferenceService chatReferenceService;
 
     @Override
     public DialogueContext process(DialogueContext context) {
@@ -114,6 +119,8 @@ public class PromptBuilder implements DialogueProcessor {
 
         // 计算当前查询的嵌入向量
         float[] queryEmbedding = embeddingService.getEmbedding(query);
+        //当前用户参数设置
+        ChatReference chatReference = chatReferenceService.findChatReferenceByUserId(1L);
 
         // 创建包含相似度信息的临时列表
         List<Map.Entry<DialogueRecord, Double>> scoredRecords = new ArrayList<>();
@@ -134,7 +141,7 @@ public class PromptBuilder implements DialogueProcessor {
             }
 
             // 综合评分
-            double score = 0.7 * similarity + 0.3 * timeFactor;
+            double score = chatReference.getSimilarityWeight() * similarity + chatReference.getTimeFactorWeight() * timeFactor;
 
             scoredRecords.add(new AbstractMap.SimpleEntry<>(record, score));
         }

@@ -131,6 +131,7 @@ chat:
   qwen:
     model: qwen-plus
     url: https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions
+    embeddingUrl : https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings
     apiKey: sk-d91d0975f46e427daf666aa2e5787779
 
 

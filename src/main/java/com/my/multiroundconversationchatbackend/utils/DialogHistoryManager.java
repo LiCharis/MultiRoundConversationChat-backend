@@ -78,7 +78,8 @@ public class DialogHistoryManager {
      * 清空当前会话的对话历史
      */
     public static void clear(HttpSession session) {
-        session.removeAttribute(HISTORY_KEY);
+        List<DialogueRecord> attribute = (List<DialogueRecord>) session.getAttribute(HISTORY_KEY);
+        attribute.clear();
         log.debug("Cleared dialogue history for session {}", session.getId());
     }
 

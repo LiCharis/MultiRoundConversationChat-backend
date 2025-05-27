@@ -5,13 +5,13 @@ import com.my.multiroundconversationchatbackend.exception.BusinessException;
 import com.my.multiroundconversationchatbackend.exception.ThrowUtils;
 import com.my.multiroundconversationchatbackend.model.dto.ChatRequest;
 import com.my.multiroundconversationchatbackend.model.dto.ChatUpdateRequest;
-import com.my.multiroundconversationchatbackend.model.entity.AddMessageBodyRequest;
-import com.my.multiroundconversationchatbackend.model.entity.DialogueRecord;
-import com.my.multiroundconversationchatbackend.model.entity.MessageBody;
+import com.my.multiroundconversationchatbackend.model.entity.*;
 
+import com.my.multiroundconversationchatbackend.model.entity.chatReference.ChatReference;
 import com.my.multiroundconversationchatbackend.service.chat.ChatService;
 import com.my.multiroundconversationchatbackend.service.chat.conversation.ConversationService;
 
+import com.my.multiroundconversationchatbackend.service.chatReference.service.ChatReferenceService;
 import com.my.multiroundconversationchatbackend.utils.DialogHistoryManager;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -38,6 +38,9 @@ public class ChatController {
 
     @Autowired
     private ConversationService conversationService;
+
+    @Autowired
+    private ChatReferenceService chatReferenceService;
 
     /**
      * 创建
@@ -170,4 +173,12 @@ public class ChatController {
         return ResultUtils.success(dialogueRecordList);
     }
 
+    @ApiOperation(value = "修改聊天相关参数")
+    @PostMapping("/changePreference")
+    public BaseResponse<Boolean> changeWeightPreference(@RequestBody ChatPreference chatPreference) {
+        ChatReference chatReference = new ChatReference();
+        BeanUtils.copyProperties(chatPreference, chatReference);
+        int updated = chatReferenceService.updateChatReference(chatReference);
+        return ResultUtils.success(updated > 1);
+    }
 }

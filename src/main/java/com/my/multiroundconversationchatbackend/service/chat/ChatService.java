@@ -195,7 +195,7 @@ public class ChatService {
         //清除问答记录
         DialogHistoryManager.clear(httpSession);
         //清除计数器
-        CounterManager.clear(httpSession);
+        CounterManager.reset(httpSession);
     }
 
 

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.my.multiroundconversationchatbackend.mapper.ChatReferenceMapper">
+
+    <resultMap id="BaseResultMap" type="com.my.multiroundconversationchatbackend.model.entity.chatReference.ChatReference">
+            <result property="userId" column="user_id"/>
+            <result property="timeWeight" column="time_weight" />
+            <result property="frequencyWeight" column="frequency_weight" />
+            <result property="semanticWeight" column="semantic_weight" />
+            <result property="similarityWeight" column="similarity_weight" />
+            <result property="timeFactorWeight" column="time_factor_weight" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        timeWeight,frequencyWeight,semanticWeight,similarityWeight,timeFactorWeight
+    </sql>
+</mapper>
