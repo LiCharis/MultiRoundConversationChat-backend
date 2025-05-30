@@ -126,13 +126,13 @@ chat:
   deepseek:
     model: deepseek-chat
     url: https://api.deepseek.com/chat/completions
-    apiKey: sk-3aa2ba0aba234dfd9110f4a0b2215b7d
+    apiKey: 
 
   qwen:
     model: qwen-plus
     url: https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions
     embeddingUrl : https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings
-    apiKey: sk-d91d0975f46e427daf666aa2e5787779
+    apiKey: 
 
 
 
